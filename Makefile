@@ -6,7 +6,7 @@ obj=obj/fhedit.o
 targets=build/fhedit
 
 build/fhedit: $(obj)
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o fhedit
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
 obj/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $^ -o $@
