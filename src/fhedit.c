@@ -37,6 +37,9 @@ int main(int argc, char *argv[]) {
 
 	while(read(STDIN_FILENO, &c, 1) == 1) {
 		if(itype == FHEDIT_ITYPE_FILE_NAME && c == '\n') {
+			mode.c_lflag &= ~(ECHO);
+			tcsetattr(STDIN_FILENO, TCSANOW, &mode);
+
 			file_name = malloc(input_length + 1);
 			
 			strncpy(file_name, input_buffer, input_length);
@@ -56,6 +59,9 @@ int main(int argc, char *argv[]) {
 			
 			itype = FHEDIT_ITYPE_CONTROLS;
 		} else if(itype == FHEDIT_ITYPE_MESSAGE && c == '\n') {
+			mode.c_lflag &= ~(ECHO);
+			tcsetattr(STDIN_FILENO, TCSANOW, &mode);
+
 			char *message = malloc(input_length + 1);
 			
 			strncpy(message, input_buffer, input_length);
@@ -75,9 +81,28 @@ int main(int argc, char *argv[]) {
 				break;
 			} else if(c == 'f') {
 				itype = FHEDIT_ITYPE_FILE_NAME;
+				write(STDOUT_FILENO, "File Name: ", 11);
+				
+				mode.c_lflag |= ECHO;
+				tcsetattr(STDIN_FILENO, TCSANOW, &mode);
 			} else if(c == 'm' && file_num != -1) {
 				itype = FHEDIT_ITYPE_MESSAGE;
+				write(STDOUT_FILENO, "Message: ", 9);
+
+				mode.c_lflag |= ECHO;
+				tcsetattr(STDIN_FILENO, TCSANOW, &mode);
 			} else if(c == 'r' && file_num != -1) {
+				int file_length = lseek(file_num, 0, SEEK_END);
+				if(file_length == -1)
+					break;
+
+				lseek(file_num, 0, SEEK_SET);
+				char *buff = malloc(file_length);
+
+				read(file_num, buff, file_length);
+
+				write(STDOUT_FILENO, buff, file_length);
+				write(STDOUT_FILENO, "\n", 1);
 			} else if(c == 'c' && file_num != -1) {
 				int result = close(file_num);
 				if(result == -1)
@@ -86,6 +111,9 @@ int main(int argc, char *argv[]) {
 				free(file_name);
 				file_name = NULL;
 				file_num = -1;
+			} else {
+				if(write(STDOUT_FILENO, &c, 1) == -1)
+					break;
 			}
 		} else {
 			if(input_length < input_buffer_size) {
